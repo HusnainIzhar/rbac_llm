@@ -1,6 +1,6 @@
-from config.db_config import collection
-from models.schema import all_users
-from fastapi import HTTPException
+from app.config.db_config import collection
+from app.models.schema import all_users
+from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 
 

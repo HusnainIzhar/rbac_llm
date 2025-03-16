@@ -1,9 +1,9 @@
 from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi import Response
-from config.db_config import collection
-from models.schema import all_users
-from utils.tokens import send_token
+from app.config.db_config import collection
+from app.models.schema import all_users
+from app.utils.tokens import send_token
 import bcrypt
 
 

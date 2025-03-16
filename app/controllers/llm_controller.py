@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
 from fastapi.responses import JSONResponse
-from services.llm import handle_chat
-from middleware.authentication import require_auth
+from app.services.llm import handle_chat
+from app.middleware.authentication import require_auth
 import os
 import uuid
 from typing import Optional

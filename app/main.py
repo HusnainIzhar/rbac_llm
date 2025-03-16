@@ -1,8 +1,8 @@
 from typing import Union
 from fastapi import FastAPI
-from routes.user import router as user_router
-from routes.admin import router as admin_router
-from controllers.llm_controller import router as llm_router
+from app.routes.user import router as user_router
+from app.routes.admin import router as admin_router
+from app.controllers.llm_controller import router as llm_router
 
 app = FastAPI()
 

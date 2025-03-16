@@ -1,10 +1,12 @@
-def individual_user(llm):
+def individual_user(user):
     return {
-        "id": str(llm["id"]),
-        "title": llm["title"],
-        "first_name": llm["first_name"],
+        "id": str(user["_id"]),
+        "email": user.get("email", ""),
+        "full_name": user.get("full_name", ""),
+        "role": user.get("role", "user"),
+        "created_at": user.get("created_at", 0)
     }
 
 
-def all_users(llm):
-    return [individual_user(llm) for llm in llm]
+def all_users(users):
+    return [individual_user(user) for user in users]

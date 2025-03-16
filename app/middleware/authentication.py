@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status, Request, Response
 from fastapi.security import APIKeyCookie
-from utils.tokens import verify_token, create_access_token, send_token
-from config.db_config import collection
+from app.utils.tokens import verify_token, create_access_token, send_token
+from app.config.db_config import collection
 from typing import Optional
 
 # Cookie extractors
