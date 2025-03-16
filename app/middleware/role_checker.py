@@ -1,7 +1,7 @@
 from fastapi import Depends, HTTPException, status
 from typing import List, Union
 from functools import wraps
-from authentication import get_current_user
+from .authentication import get_current_user
 
 def role_required(allowed_roles: Union[str, List[str]]):
     if isinstance(allowed_roles, str):

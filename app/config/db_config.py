@@ -7,7 +7,6 @@ load_dotenv()
 
 MONGO_URI = os.getenv("MONGO_URI")
 
-client = MongoClient(MONGO_URI, tlsCAFile=certifi.where(), serverApi=ServerApi("1"))
-
+client = MongoClient(MONGO_URI, tlsCAFile=certifi.where(), server_api=ServerApi("1"))
 db = client.llm_db
 collection = db["llm_collection"]
