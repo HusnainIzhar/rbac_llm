@@ -4,30 +4,32 @@ from fastapi import Response
 from app.config.db_config import collection
 from app.models.schema import all_users
 from app.utils.tokens import send_token
+from app.models.schema import UserCreate, UserUpdate, UserLogin, UserResponse
+from app.models.schema import individual_user
 import bcrypt
-
-
-
+from bson import ObjectId  # Make sure this import is at the top
 
 
 # Read User
 async def read_user(user_id: str):
     try:
-        user = collection.find_one({"_id": user_id})
+        # Convert string ID to ObjectId
+        object_id = ObjectId(user_id)
+        user = collection.find_one({"_id": object_id})
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
-        return user
+        return individual_user(user)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 # New User
-async def create_user(data: dict):
+async def create_user(data: UserCreate):
     try:
-        email = data.get("email")
-        password = data.get("password")
-        full_name = data.get("full_name")
-        role = data.get("role")
+        email = data.email
+        password = data.password
+        full_name = data.full_name
+        role = data.role
 
         if not email or not password or not full_name or not role:
             raise HTTPException(
@@ -41,56 +43,73 @@ async def create_user(data: dict):
                 detail="User with this email already exists",
             )
 
+        user_data = data.dict()
+
         salt = bcrypt.gensalt()
         hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
-        data["password"] = hashed_password
 
-        user = collection.insert_one(data)
-        user["password"] = None
+        user_data["password"] = hashed_password
+        result = collection.insert_one(user_data)
+        created_user = collection.find_one({"_id": result.inserted_id})
+        user_response = individual_user(created_user)
+
+        user_response["password"] = None
         return JSONResponse(
             status_code=status.HTTP_201_CREATED,
-            content={"message": "User created successfully", "data": user},
+            content={"message": "User created successfully", "data": user_response},
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 # Update User
-async def update_user(user_id: str, data: dict):
+async def update_user(user_id: str, data: UserUpdate):
     try:
-        email = data.get("email")
-        password = data.get("password")
-        full_name = data.get("full_name")
-        role = data.get("role")
-
-        existing_user = collection.find_one({"_id": user_id})
+        # Convert string ID to ObjectId
+        object_id = ObjectId(user_id)
+        existing_user = collection.find_one({"_id": object_id})
         if not existing_user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        if password:
-            salt = bcrypt.gensalt()
-            hashed_password = bcrypt.hashpw(password.encode("utf-8"), salt)
-            data["password"] = hashed_password
+        # Filter out None values and convert to dict
+        update_data = {k: v for k, v in data.dict().items() if v is not None}
 
-        user = collection.update_one({"_id": user_id}, {"$set": data})
-        user["password"] = None
+        # Handle password hashing if present
+        if "password" in update_data and update_data["password"]:
+            salt = bcrypt.gensalt()
+            hashed_password = bcrypt.hashpw(
+                update_data["password"].encode("utf-8"), salt
+            )
+            update_data["password"] = hashed_password
+
+        # Update the document
+        collection.update_one({"_id": object_id}, {"$set": update_data})
+
+        # Get the updated user
+        updated_user = collection.find_one({"_id": object_id})
+
+        # Format the user data for response
+        user_response = individual_user(updated_user)
 
         return JSONResponse(
             status_code=status.HTTP_200_OK,
-            content={"message": "User updated successfully", "data": user},
+            content={"message": "User updated successfully", "data": user_response},
         )
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
 
 # Delete User
+# Delete User
 async def delete_user(user_id: str):
     try:
-        existing_user = collection.find_one({"_id": user_id})
+        # Convert string ID to ObjectId
+        object_id = ObjectId(user_id)
+        existing_user = collection.find_one({"_id": object_id})
         if not existing_user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        collection.delete_one({"_id": user_id})
+        collection.delete_one({"_id": object_id})
         return JSONResponse(
             status_code=status.HTTP_200_OK,
             content={"message": "User deleted successfully"},
@@ -100,10 +119,10 @@ async def delete_user(user_id: str):
 
 
 # Login
-async def login(data: dict, response: Response):
+async def login(data: UserLogin, response: Response):
     try:
-        email = data.get("email")
-        password = data.get("password")
+        email = data.email
+        password = data.password
 
         if not email or not password:
             raise HTTPException(
@@ -124,9 +143,9 @@ async def login(data: dict, response: Response):
                 detail="Invalid password",
             )
 
-        user["password"] = None
+        user_data = individual_user(user)
 
-        return send_token(user, response, status_code=status.HTTP_200_OK)
+        return send_token(user_data, response, status_code=status.HTTP_200_OK)
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 

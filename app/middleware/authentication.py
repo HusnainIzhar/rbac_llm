@@ -3,6 +3,10 @@ from fastapi.security import APIKeyCookie
 from app.utils.tokens import verify_token, create_access_token, send_token
 from app.config.db_config import collection
 from typing import Optional
+from app.utils.tokens import ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET
+from bson import ObjectId  # Add this import
+
+
 
 # Cookie extractors
 oauth2_scheme_access = APIKeyCookie(name="access_token", auto_error=False)
@@ -16,11 +20,7 @@ async def get_current_user(
 ) -> Optional[dict]:
     """
     Middleware that extracts and validates the user from authentication tokens.
-    
-    If access token is invalid but refresh token is valid, generates a new access token.
-    """
-    from utils.tokens import ACCESS_TOKEN_SECRET, REFRESH_TOKEN_SECRET
-    
+    """    
     # No tokens provided
     if not access_token and not refresh_token:
         return None
@@ -30,25 +30,40 @@ async def get_current_user(
         payload = verify_token(access_token, ACCESS_TOKEN_SECRET)
         if payload:
             user_id = payload.get("id")
-            user = collection.find_one({"_id": user_id})
-            if user:
-                return user
+            # Convert string ID to ObjectId
+            try:
+                user = collection.find_one({"_id": ObjectId(user_id)})
+                if user:
+                    return user
+            except:
+                pass
     
     # Access token invalid or expired, try refresh token
     if refresh_token:
         payload = verify_token(refresh_token, REFRESH_TOKEN_SECRET)
         if payload:
             user_id = payload.get("id")
-            user = collection.find_one({"_id": user_id})
-            
-            if user:
-                # Generate new access token
-                new_access_token = create_access_token({"id": str(user["_id"])})
-                
-                # Set the new access token in the response
-                send_token(user, response)
-                
-                return user
+            # Convert string ID to ObjectId
+            try:
+                user = collection.find_one({"_id": ObjectId(user_id)})
+                if user:
+                    # Generate new access token
+                    new_access_token = create_access_token({"id": str(user["_id"])})
+                    
+                    # Set the new access token in the response
+                    response.set_cookie(
+                        key="access_token",
+                        value=new_access_token,
+                        httponly=True,
+                        max_age=3600,  # 1 hour
+                        expires=3600,
+                        samesite="lax",
+                        secure=False,  # Set to True in production with HTTPS
+                    )
+                    
+                    return user
+            except:
+                pass
     
     # Both tokens are invalid
     return None

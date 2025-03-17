@@ -7,17 +7,19 @@ from langchain.schema.output_parser import StrOutputParser
 from langchain.memory import ConversationBufferMemory
 from langchain.text_splitter import RecursiveCharacterTextSplitter
 from langchain.vectorstores import FAISS
-from langchain_openai import OpenAIEmbeddings
+from langchain_google_genai import GoogleGenerativeAIEmbeddings
+from langchain_google_genai import ChatGoogleGenerativeAI
+
 
 
 load_dotenv()
 
-OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
+GEMINI_API = os.getenv("GEMINI_API")
 
-if OPENAI_API_KEY is None:
-    raise Exception("OPENAI_API_KEY is not set")
+if GEMINI_API is None:
+    raise Exception("GEMINI_API_KEY is not set")
 
-llm = ChatOpenAI(temperature=0.7, model_name="gpt-4")
+llm = ChatGoogleGenerativeAI(temperature=0.7,  model="gemini-1.5-pro",google_api_key=GEMINI_API)
 global_memory = ConversationBufferMemory(memory_key='chat_history', return_messages=True)
 
 
@@ -36,7 +38,7 @@ def load_content(file):
 def split_embed(data):
     text_splitter = RecursiveCharacterTextSplitter(chunk_size=1000, chunk_overlap=200)
     splitted_data = text_splitter.split_documents(data)
-    embeddings = OpenAIEmbeddings()
+    embeddings = GoogleGenerativeAIEmbeddings(model="models/text-embedding-004", google_api_key=GEMINI_API)
     vectorstore = FAISS.from_documents(splitted_data, embedding=embeddings)
     return vectorstore
 

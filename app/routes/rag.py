@@ -15,39 +15,52 @@ os.makedirs(UPLOAD_DIR, exist_ok=True)
 @router.post("/query")
 async def rag_query(
     message: str = Form(...),
-    file: UploadFile = File(...),
+    file: Optional[UploadFile] = File(None),  # Make file optional
     current_user: dict = Depends(require_auth),
 ):
     """
-    RAG endpoint that requires uploading a document and a query.
-    Performs retrieval augmented generation using the document as context.
+    RAG endpoint that accepts a query and an optional document.
+    If document is provided, performs RAG using the document as context.
+    If no document is provided, processes the query directly.
     """
     file_path = None
     try:
-        # Process uploaded file
-        file_extension = os.path.splitext(file.filename)[1]
-        unique_filename = f"{uuid.uuid4()}{file_extension}"
-        file_path = os.path.join(UPLOAD_DIR, unique_filename)
+        # Handle case with file
+        if file:
+            # Process uploaded file
+            file_extension = os.path.splitext(file.filename)[1]
+            unique_filename = f"{uuid.uuid4()}{file_extension}"
+            file_path = os.path.join(UPLOAD_DIR, unique_filename)
 
-        with open(file_path, "wb") as f:
-            content = await file.read()
-            f.write(content)
+            with open(file_path, "wb") as f:
+                content = await file.read()
+                f.write(content)
 
-        # Use document_chat from your llm service specifically for RAG
-        response = document_chat(file_path, message)
-
-        return {
-            "response": response, 
-            "user": current_user["full_name"],
-            "document": file.filename
-        }
+            # Use document_chat for RAG
+            response = document_chat(file_path, message)
+            
+            return {
+                "response": response, 
+                "user": current_user["full_name"],
+                "document": file.filename
+            }
+        else:
+            # Handle case without file - use regular chat instead of RAG
+            # You'll need a function that handles regular chat without document context
+            from app.services.llm import handle_chat  # Import the regular chat function
+            response = handle_chat(None, message)
+            
+            return {
+                "response": response,
+                "user": current_user["full_name"],
+            }
 
     except Exception as e:
         raise HTTPException(
-            status_code=500, detail=f"Error processing RAG request: {str(e)}"
+            status_code=500, detail=f"Error processing request: {str(e)}"
         )
 
     finally:
-        # Clean up temporary file
+        # Clean up temporary file if it exists
         if file_path and os.path.exists(file_path):
             os.remove(file_path)
