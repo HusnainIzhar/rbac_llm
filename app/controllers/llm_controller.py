@@ -1,5 +1,4 @@
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form
-from fastapi.responses import JSONResponse
 from app.services.llm import handle_chat
 from app.middleware.authentication import require_auth
 import os
@@ -8,7 +7,6 @@ from typing import Optional
 
 router = APIRouter(prefix="/llm", tags=["llm"])
 
-# Directory for storing temporary uploaded files
 UPLOAD_DIR = "uploads"
 os.makedirs(UPLOAD_DIR, exist_ok=True)
 
@@ -18,13 +16,8 @@ async def secure_chat(
     file: Optional[UploadFile] = File(None),
     current_user: dict = Depends(require_auth),
 ):
-    """
-    Secured endpoint that requires authentication.
-    Same functionality as /chat but with mandatory authentication.
-    """
     file_path = None
     try:
-        # Process uploaded file if present
         if file:
             file_extension = os.path.splitext(file.filename)[1]
             unique_filename = f"{uuid.uuid4()}{file_extension}"

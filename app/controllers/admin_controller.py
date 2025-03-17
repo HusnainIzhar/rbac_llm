@@ -19,30 +19,26 @@ async def get_all_users():
 # Bulk Delete Users
 async def bulk_delete_users(user_ids: list):
     try:
-        # Convert string IDs to ObjectId
         object_ids = [ObjectId(id) for id in user_ids]
         result = collection.delete_many({"_id": {"$in": object_ids}})
         return {"message": f"Users deleted successfully: {result.deleted_count} users removed"}
     except Exception as e:
         raise HTTPException(status_code=400, detail=str(e))
 
+
 # Change Role
 async def update_role(user_id, role_data):
     try:
-        # Convert to dict if role_data is a Pydantic model
         if hasattr(role_data, "dict"):
             role_data = role_data.dict()
             
-        # Convert string ID to ObjectId
         object_id = ObjectId(user_id)
         user = collection.find_one({"_id": object_id})
         if not user:
             raise HTTPException(status_code=404, detail="User not found")
             
-        # Update user role
         collection.update_one({"_id": object_id}, {"$set": role_data})
         
-        # Get updated user
         updated_user = collection.find_one({"_id": object_id})
         user_response = individual_user(updated_user)
         

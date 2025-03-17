@@ -7,15 +7,16 @@ from app.routes.rag import router as rag_router
 
 app = FastAPI()
 
-# Include routers from separate route files
 app.include_router(admin_router)
 app.include_router(user_router)
 app.include_router(llm_router)
 app.include_router(rag_router)
 
+
 @app.get("/")
 def read_root():
     return {"Hello": "World"}
+
 
 @app.get("/items/{item_id}")
 def read_item(item_id: int, q: Union[str, None] = None):

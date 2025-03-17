@@ -2,18 +2,16 @@ from fastapi import HTTPException, status
 from fastapi.responses import JSONResponse
 from fastapi import Response
 from app.config.db_config import collection
-from app.models.schema import all_users
 from app.utils.tokens import send_token
 from app.models.schema import UserCreate, UserUpdate, UserLogin, UserResponse
 from app.models.schema import individual_user
 import bcrypt
-from bson import ObjectId  # Make sure this import is at the top
+from bson import ObjectId
 
 
 # Read User
 async def read_user(user_id: str):
     try:
-        # Convert string ID to ObjectId
         object_id = ObjectId(user_id)
         user = collection.find_one({"_id": object_id})
         if not user:
@@ -34,7 +32,7 @@ async def create_user(data: UserCreate):
         if not email or not password or not full_name or not role:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="Please provide all required fields: email, password, full_name, and role",
+                detail="Please provide all required fields",
             )
         existing_user = collection.find_one({"email": email})
         if existing_user:
@@ -65,16 +63,13 @@ async def create_user(data: UserCreate):
 # Update User
 async def update_user(user_id: str, data: UserUpdate):
     try:
-        # Convert string ID to ObjectId
         object_id = ObjectId(user_id)
         existing_user = collection.find_one({"_id": object_id})
         if not existing_user:
             raise HTTPException(status_code=404, detail="User not found")
 
-        # Filter out None values and convert to dict
         update_data = {k: v for k, v in data.dict().items() if v is not None}
 
-        # Handle password hashing if present
         if "password" in update_data and update_data["password"]:
             salt = bcrypt.gensalt()
             hashed_password = bcrypt.hashpw(
@@ -82,13 +77,10 @@ async def update_user(user_id: str, data: UserUpdate):
             )
             update_data["password"] = hashed_password
 
-        # Update the document
         collection.update_one({"_id": object_id}, {"$set": update_data})
 
-        # Get the updated user
         updated_user = collection.find_one({"_id": object_id})
 
-        # Format the user data for response
         user_response = individual_user(updated_user)
 
         return JSONResponse(
@@ -100,10 +92,8 @@ async def update_user(user_id: str, data: UserUpdate):
 
 
 # Delete User
-# Delete User
 async def delete_user(user_id: str):
     try:
-        # Convert string ID to ObjectId
         object_id = ObjectId(user_id)
         existing_user = collection.find_one({"_id": object_id})
         if not existing_user:

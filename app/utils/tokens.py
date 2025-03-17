@@ -41,17 +41,11 @@ def verify_token(token: str, secret_key: str) -> Dict:
 
 
 def send_token(user: dict, response: Response, status_code: int = status.HTTP_200_OK):
-    # Change this line:
-    # From: access_token = create_access_token({"id": str(user["_id"])})
-    # To:
+
     access_token = create_access_token({"id": user["id"]})
-    
-    # Change this line:
-    # From: refresh_token = create_refresh_token({"id": str(user["_id"])})
-    # To:
+
     refresh_token = create_refresh_token({"id": user["id"]})
 
-    # Rest of function remains the same
     response.set_cookie(
         key="access_token",
         value=access_token,

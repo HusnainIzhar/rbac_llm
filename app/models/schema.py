@@ -1,9 +1,7 @@
-from pydantic import BaseModel, EmailStr, Field, validator
-from typing import Optional, List, Dict, Any
-from datetime import datetime
+from pydantic import BaseModel, EmailStr, validator
+from typing import Optional
 from bson import ObjectId
 
-# Custom ObjectId field for MongoDB compatibility
 class PyObjectId(ObjectId):
     @classmethod
     def __get_validators__(cls):
@@ -19,7 +17,6 @@ class PyObjectId(ObjectId):
     def __modify_schema__(cls, field_schema):
         field_schema.update(type="string")
 
-# Helper functions for response formatting
 def individual_user(user):
     return {
         "id": str(user["_id"]),
@@ -32,7 +29,6 @@ def individual_user(user):
 def all_users(users):
     return [individual_user(user) for user in users]
 
-# Request Models
 class UserCreate(BaseModel):
     email: EmailStr
     password: str
@@ -75,7 +71,6 @@ class UserLogin(BaseModel):
             }
         }
 
-# Response Models
 class UserResponse(BaseModel):
     id: str
     email: str
@@ -94,7 +89,6 @@ class UserResponse(BaseModel):
             }
         }
 
-# Query Models
 class RagQuery(BaseModel):
     message: str
     
@@ -110,7 +104,7 @@ class RoleUpdate(BaseModel):
     
     @validator('role')
     def validate_role(cls, v):
-        allowed_roles = ["user", "admin", "moderator"]  # Add any other roles your system supports
+        allowed_roles = ["user", "admin", "moderator"]  
         if v not in allowed_roles:
             raise ValueError(f"Role must be one of {allowed_roles}")
         return v

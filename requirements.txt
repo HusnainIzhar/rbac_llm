@@ -1,0 +1,13 @@
+fastapi
+uvicorn
+pydantic
+python-dotenv
+pymongo
+certifi
+bcrypt
+python-jose[cryptography]
+langchain
+openai
+google-generativeai
+docx2txt
+faiss-cpu
